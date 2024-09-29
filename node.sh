@@ -1,51 +1,51 @@
 #!/bin/bash
 
-# Set NVM directory
+# 设置 NVM 目录
 NVM_DIR="$HOME/.nvm"
 
-# Function to load NVM into the environment
+# 加载 NVM 到环境中
 load_nvm() {
     if [ -s "$NVM_DIR/nvm.sh" ]; then
-        . "$NVM_DIR/nvm.sh"  # Load nvm
-        export PATH="$NVM_DIR/versions/node/$(nvm version)/bin:$PATH"  # Add node and npm to PATH
+        . "$NVM_DIR/nvm.sh"  # 加载 nvm
+        export PATH="$NVM_DIR/versions/node/$(nvm version)/bin:$PATH"  # 将 node 和 npm 添加到 PATH 中
     else
-        echo "Error: NVM is not installed correctly. Exiting..."
+        echo "错误：NVM 未正确安装。正在退出..."
         exit 1
     fi
 }
 
-# Function to install NVM if not found
+# 如果没有找到 NVM，则安装 NVM
 install_nvm() {
-    echo "NVM not found. Installing NVM..."
+    echo "未找到 NVM。正在安装 NVM..."
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
-    load_nvm  # Reload NVM in the current shell
+    load_nvm  # 在当前 shell 中重新加载 NVM
 }
 
-# Ensure necessary build tools are available (gcc, make)
+# 确保必要的构建工具可用（gcc、make）
 install_build_tools() {
     if ! command -v gcc &> /dev/null || ! command -v make &> /dev/null; then
-        echo "Installing required build tools..."
+        echo "正在安装所需的构建工具..."
         sudo apt update && sudo apt install -y build-essential
     fi
 }
 
-# Install Node.js and npm via NVM if not found
+# 如果未找到 Node.js 和 npm，通过 NVM 安装它们
 install_node_npm() {
     if ! command -v node &> /dev/null; then
-        echo "Node.js not found. Installing the latest version using NVM..."
+        echo "未找到 Node.js。正在使用 NVM 安装最新版本..."
         nvm install node
     fi
 
-    echo "Node.js version: $(node -v)"
-    echo "npm version: $(npm -v)"
+    echo "Node.js 版本：$(node -v)"
+    echo "npm 版本：$(npm -v)"
 }
 
-# Add NVM to shell configuration files for future sessions
+# 将 NVM 添加到 shell 配置文件，以便将来会话使用
 setup_nvm_for_future_shells() {
     shell_config_files=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile")
     for config_file in "${shell_config_files[@]}"; do
         if [ -f "$config_file" ] && ! grep -q "NVM_DIR" "$config_file"; then
-            echo "Adding NVM to $config_file..."
+            echo "正在将 NVM 添加到 $config_file..."
             {
                 echo 'export NVM_DIR="$HOME/.nvm"'
                 echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
@@ -55,7 +55,7 @@ setup_nvm_for_future_shells() {
     done
 }
 
-# Source shell config files for the current session
+# 在当前会话中加载 shell 配置文件
 source_shell_files() {
     shell_files=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile")
     for shell_file in "${shell_files[@]}"; do
@@ -63,54 +63,55 @@ source_shell_files() {
     done
 }
 
-# Check if nvm, node, and npm are accessible
+# 检查 nvm、node 和 npm 是否可用
 check_commands() {
     for cmd in nvm node npm; do
         if ! command -v $cmd &> /dev/null; then
-            echo "Error: $cmd is not accessible. Please check the installation."
+            echo "错误：$cmd 无法访问。请检查安装。"
             exit 1
         fi
     done
-    echo "nvm, node, and npm are successfully loaded."
+    echo "nvm、node 和 npm 已成功加载。"
 }
 
-# Main logic to handle both root and non-root users
+# 主逻辑，处理 root 用户和非 root 用户
 main() {
-    # Check if running as root
+    # 检查是否以 root 身份运行
     if [ "$EUID" -eq 0 ]; then
-        echo "Running as root user."
+        echo "以 root 用户身份运行。"
         NVM_DIR="/root/.nvm"
     else
-        echo "Running as non-root user."
+        echo "以非 root 用户身份运行。"
     fi
 
-    # Check if NVM is installed, if not install it
+    # 检查 NVM 是否已安装，如果未安装则进行安装
     if [ ! -d "$NVM_DIR" ]; then
         install_nvm
     else
-        echo "NVM is already installed."
+        echo "NVM 已经安装。"
         load_nvm
     fi
 
-    # Ensure build tools are installed
+    # 确保构建工具已安装
     install_build_tools
-    # Install Node.js and npm if not available
+    # 如果 Node.js 和 npm 不可用，则进行安装
     install_node_npm
-    # Set up NVM for future shell sessions
+    # 为未来的 shell 会话设置 NVM
     setup_nvm_for_future_shells
-    # Source shell files for the current session
+    # 在当前会话中加载 shell 文件
     source_shell_files
-    # Check if nvm, node, and npm are accessible
+    # 检查 nvm、node 和 npm 是否可用
     check_commands
-    # Debugging output to verify PATH
-    echo "Current PATH: $PATH"
-    echo "NVM directory: $NVM_DIR"
-    echo "Node.js Path: $(command -v node)"
-    echo "npm Path: $(command -v npm)"
-    echo "NVM, Node.js, and npm setup complete for current and future shells."
+    # 调试输出以验证 PATH
+    echo "当前 PATH：$PATH"
+    echo "NVM 目录：$NVM_DIR"
+    echo "Node.js 路径：$(command -v node)"
+    echo "npm 路径：$(command -v npm)"
+    echo "NVM、Node.js 和 npm 设置已完成，适用于当前和未来的 shell。"
 }
 
-# Run the main function
+# 运行主函数
 main
 sleep 10
 source ~/.bashrc
+
