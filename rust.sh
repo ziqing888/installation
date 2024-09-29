@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Define the location where Rust will be installed
+# 定义 Rust 安装的位置
 RUSTUP_HOME="$HOME/.rustup"
 CARGO_HOME="$HOME/.cargo"
 LOG_FILE="$HOME/rust_install.log"
 
-# Log output to a file and console simultaneously
+# 将输出记录到文件和控制台
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# Load Rust environment variables
+# 加载 Rust 环境变量
 load_rust() {
     export RUSTUP_HOME="$HOME/.rustup"
     export CARGO_HOME="$HOME/.cargo"
@@ -18,9 +18,9 @@ load_rust() {
     fi
 }
 
-# Function to install system dependencies required for Rust
+# 安装 Rust 所需的系统依赖
 install_dependencies() {
-    echo "Installing system dependencies required for Rust..."
+    echo "正在安装 Rust 所需的系统依赖..."
     if command -v apt &> /dev/null; then
         sudo apt update && sudo apt install -y build-essential libssl-dev curl
     elif command -v yum &> /dev/null; then
@@ -30,53 +30,53 @@ install_dependencies() {
     elif command -v pacman &> /dev/null; then
         sudo pacman -Syu base-devel openssl curl
     elif command -v brew &> /dev/null; then
-        echo "MacOS detected. Installing dependencies using Homebrew..."
+        echo "检测到 MacOS，使用 Homebrew 安装依赖..."
         brew install openssl curl
     else
-        echo "Unsupported package manager. Please install dependencies manually."
+        echo "不支持的包管理器，请手动安装依赖。"
         exit 1
     fi
 }
 
-# Install system dependencies before checking for Rust
+# 在检查 Rust 之前安装系统依赖
 install_dependencies
 
-# Check if Rust is already installed
+# 检查 Rust 是否已安装
 if command -v rustup &> /dev/null; then
-    echo "Rust is already installed."
-    read -p "Do you want to reinstall or update Rust? (y/n): " choice
+    echo "Rust 已安装。"
+    read -p "是否要重新安装或更新 Rust？（y/n）： " choice
     if [[ "$choice" == "y" ]]; then
-        echo "Warning: Reinstalling Rust will remove your current setup."
-        read -p "Are you sure you want to continue? (y/n): " confirm
+        echo "警告：重新安装 Rust 将删除您当前的设置。"
+        read -p "您确定要继续吗？（y/n）： " confirm
         if [[ "$confirm" == "y" ]]; then
-            echo "Reinstalling Rust..."
+            echo "正在重新安装 Rust..."
             rustup self uninstall -y
             if ! curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; then
-                echo "Error: Rust installation failed. Exiting."
+                echo "错误：Rust 安装失败。正在退出。"
                 exit 1
             fi
         else
-            echo "Reinstallation aborted."
+            echo "重新安装已取消。"
             exit 0
         fi
     fi
 else
-    echo "Rust is not installed. Installing Rust..."
+    echo "Rust 未安装。正在安装 Rust..."
     if ! curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; then
-        echo "Error: Rust installation failed. Exiting."
+        echo "错误：Rust 安装失败。正在退出。"
         exit 1
     fi
 fi
 
-# Load Rust environment after installation
+# 安装后加载 Rust 环境
 load_rust 
 
-# Fix permissions for Rust directories
-echo "Ensuring correct permissions for Rust directories..."
+# 修复 Rust 目录的权限
+echo "确保 Rust 目录的权限正确..."
 chmod -R 755 "$RUSTUP_HOME"
 chmod -R 755 "$CARGO_HOME"
 
-# Function to retry sourcing environment if Cargo is not found
+# 尝试重新加载环境以查找 Cargo
 retry_cargo() {
     local max_retries=3
     local retry_count=0
@@ -87,24 +87,24 @@ retry_cargo() {
             cargo_found=true
             break
         else
-            echo "Cargo not found in the current session. Attempting to reload the environment (try $((retry_count + 1))/$max_retries)..."
+            echo "当前会话未找到 Cargo。尝试重新加载环境（第 $((retry_count + 1))/$max_retries 次）..."
             source "$HOME/.cargo/env"
             retry_count=$((retry_count + 1))
-            sleep 1  # Adding a delay between retries
+            sleep 1  # 在重试之间添加延迟
         fi
     done
 
     if [ "$cargo_found" = false ]; then
-        echo "Error: Cargo is still not recognized after $max_retries attempts."
-        echo "Please manually source the environment by running: source \$HOME/.cargo/env"
+        echo "错误：经过 $max_retries 次尝试后，Cargo 仍未被识别。"
+        echo "请手动加载环境：运行 source \$HOME/.cargo/env"
         return 1
     fi
 
-    echo "Cargo is available in the current session."
+    echo "当前会话中可用 Cargo。"
     return 0
 }
 
-# Get the profile file for the current shell
+# 获取当前 shell 的配置文件
 get_profile() {
     if [[ $SHELL == *"zsh"* ]]; then
         echo "$HOME/.zshrc"
@@ -115,9 +115,9 @@ get_profile() {
 
 PROFILE=$(get_profile)
 
-# Add Rust environment variables to the appropriate shell profile
+# 将 Rust 环境变量添加到相应的 shell 配置文件
 if ! grep -q "CARGO_HOME" "$PROFILE"; then
-    echo "Adding Rust environment variables to $PROFILE..."
+    echo "正在将 Rust 环境变量添加到 $PROFILE..."
     {
         echo 'export RUSTUP_HOME="$HOME/.rustup"'
         echo 'export CARGO_HOME="$HOME/.cargo"'
@@ -125,26 +125,27 @@ if ! grep -q "CARGO_HOME" "$PROFILE"; then
         echo 'source "$HOME/.cargo/env"'
     } >> "$PROFILE"
 else
-    echo "Rust environment variables are already present in $PROFILE."
+    echo "Rust 环境变量已存在于 $PROFILE。"
 fi
 
-# Reload the profile automatically for the current session
+# 自动重新加载配置文件以适应当前会话
 source "$PROFILE"
 
-# Force reload of cargo env in case the session doesn’t reflect it yet
+# 强制重新加载 Cargo 环境
 source "$HOME/.cargo/env"
 
-# Retry checking for Cargo availability
+# 重试检查 Cargo 是否可用
 retry_cargo
 if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Verify Rust and Cargo versions
+# 验证 Rust 和 Cargo 版本
 rust_version=$(rustc --version)
 cargo_version=$(cargo --version)
 
-echo "Rust version: $rust_version"
-echo "Cargo version: $cargo_version"
+echo "Rust 版本：$rust_version"
+echo "Cargo 版本：$cargo_version"
 
-echo "Rust installation and setup are complete!"
+echo "Rust 安装和设置完成！"
+
